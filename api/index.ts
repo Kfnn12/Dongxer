@@ -46,7 +46,9 @@ app.get('/api/search', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing query parameter q' });
       return;
     }
-    const response = await axios.get(`https://animekhor.org/page/${page}/?s=${encodeURIComponent(query as string)}`);
+    const response = await axios.get(`https://animekhor.org/page/${page}/`, {
+      params: { s: query }
+    });
     const $ = cheerio.load(response.data);
     
     const items: any[] = [];

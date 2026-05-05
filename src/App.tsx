@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Play, MonitorPlay, FastForward, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 function App() {
   const [query, setQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [latestReleases, setLatestReleases] = useState<any[]>([]);
@@ -64,6 +65,7 @@ function App() {
 
   const performSearch = async (searchStr: string, page: number = 1) => {
     setQuery(searchStr);
+    setActiveQuery(searchStr);
     setSearchPage(page);
     setLoading(true);
     setGlobalError(null);
@@ -162,6 +164,7 @@ function App() {
   const goHome = () => {
     setResults([]);
     setQuery('');
+    setActiveQuery('');
     setSearchPage(1);
     setAnimeDetail(null);
     setWatchingIframe(null);
@@ -345,7 +348,7 @@ function App() {
               </div>
               <div className="flex justify-center items-center gap-4 mt-8">
                 <button 
-                  onClick={() => performSearch(query, Math.max(1, searchPage - 1))}
+                  onClick={() => performSearch(activeQuery, Math.max(1, searchPage - 1))}
                   disabled={searchPage === 1 || loading}
                   className="px-6 py-2 bg-neutral-900 border border-neutral-700 hover:border-rose-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                 >
@@ -355,7 +358,7 @@ function App() {
                   Page {searchPage}
                 </div>
                 <button 
-                  onClick={() => performSearch(query, searchPage + 1)}
+                  onClick={() => performSearch(activeQuery, searchPage + 1)}
                   disabled={!hasNextSearchPage || loading}
                   className="px-6 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                 >
@@ -398,7 +401,7 @@ function App() {
   );
 }
 
-function AnimeCard({ data, onClick }: { data: any, onClick: () => void }) {
+function AnimeCard({ data, onClick }: { data: any, onClick: () => void | Promise<void> }) {
   return (
     <div 
       onClick={onClick}
