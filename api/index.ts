@@ -11,7 +11,11 @@ app.use(cors());
 app.get('/api/latest', async (req, res) => {
   try {
     const page = req.query.page || 1;
-    const response = await axios.get(`https://animekhor.org/page/${page}/`);
+    const response = await axios.get(`https://animekhor.org/page/${page}/`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
     const $ = cheerio.load(response.data);
     
     const items: any[] = [];
@@ -47,7 +51,10 @@ app.get('/api/search', async (req, res) => {
       return;
     }
     const response = await axios.get(`https://animekhor.org/page/${page}/`, {
-      params: { s: query }
+      params: { s: query },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
     });
     const $ = cheerio.load(response.data);
     
@@ -89,14 +96,22 @@ app.get('/api/info', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing url parameter' });
       return;
     }
-    let response = await axios.get(url);
+    let response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
     let $ = cheerio.load(response.data);
     
     // If it's an episode page, find the anime link from breadcrumbs and fetch that instead
     const breadcrumbs = $('.ts-breadcrumb a').map((i, el) => $(el).attr('href')).get();
     if (breadcrumbs.length >= 2 && breadcrumbs[1] && breadcrumbs[1].includes('/anime/')) {
        url = breadcrumbs[1];
-       response = await axios.get(url);
+       response = await axios.get(url, {
+         headers: {
+           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+         }
+       });
        $ = cheerio.load(response.data);
     }
     
@@ -142,7 +157,11 @@ app.get('/api/watch', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing url parameter' });
       return;
     }
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
     const $ = cheerio.load(response.data);
     
     let servers: { name: string, iframe: string }[] = [];
