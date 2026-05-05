@@ -1,0 +1,6 @@
+{
+  "name": "DONGXER",
+  "description": "An anime streaming API and platform that fetches the latest episodes, descriptions, and iframe embeds. Powered by an Express backend scraping anime sites and a React UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
