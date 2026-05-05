@@ -17,6 +17,8 @@ function App() {
   const [currentEpIndex, setCurrentEpIndex] = useState<number | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [latestPage, setLatestPage] = useState(1);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasNextSearchPage, setHasNextSearchPage] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -60,19 +62,21 @@ function App() {
     setLoading(false);
   }
 
-  const performSearch = async (searchStr: string) => {
+  const performSearch = async (searchStr: string, page: number = 1) => {
     setQuery(searchStr);
+    setSearchPage(page);
     setLoading(true);
     setGlobalError(null);
     setAnimeDetail(null);
     setWatchingIframe(null);
     setPlayerError(null);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchStr)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchStr)}&page=${page}`);
       const data = await res.json();
       if (data.success) {
         setResults(data.results);
-        if (data.results.length === 0) {
+        setHasNextSearchPage(data.hasNextPage);
+        if (data.results.length === 0 && page === 1) {
           setGlobalError(`No anime found for "${searchStr}". Please try a different search term.`);
         }
       } else {
@@ -90,7 +94,7 @@ function App() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query) return;
-    performSearch(query);
+    performSearch(query, 1);
   };
 
   const loadAnimeDetails = async (url: string) => {
@@ -158,6 +162,7 @@ function App() {
   const goHome = () => {
     setResults([]);
     setQuery('');
+    setSearchPage(1);
     setAnimeDetail(null);
     setWatchingIframe(null);
     setServers([]);
@@ -298,7 +303,7 @@ function App() {
                     {animeDetail.genres.map((genre: string, idx: number) => (
                       <button
                         key={idx}
-                        onClick={() => performSearch(genre)}
+                        onClick={() => performSearch(genre, 1)}
                         className="px-3 py-1 bg-neutral-800 hover:bg-rose-600 border border-neutral-700 hover:border-rose-500 rounded-full text-xs font-semibold text-neutral-300 hover:text-white transition-colors"
                       >
                         {genre}
@@ -337,6 +342,25 @@ function App() {
                 {results.map((res: any, idx: number) => (
                   <AnimeCard key={idx} data={res} onClick={() => loadAnimeDetails(res.link)} />
                 ))}
+              </div>
+              <div className="flex justify-center items-center gap-4 mt-8">
+                <button 
+                  onClick={() => performSearch(query, Math.max(1, searchPage - 1))}
+                  disabled={searchPage === 1 || loading}
+                  className="px-6 py-2 bg-neutral-900 border border-neutral-700 hover:border-rose-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  Previous
+                </button>
+                <div className="font-bold text-rose-500 bg-neutral-900 border border-neutral-800 px-4 py-2 rounded-lg">
+                  Page {searchPage}
+                </div>
+                <button 
+                  onClick={() => performSearch(query, searchPage + 1)}
+                  disabled={!hasNextSearchPage || loading}
+                  className="px-6 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  Next
+                </button>
               </div>
             </motion.div>
           ) : latestReleases.length > 0 ? (
@@ -384,9 +408,10 @@ function AnimeCard({ data, onClick }: { data: any, onClick: () => void }) {
         <img 
           src={data.img} 
           alt={data.title} 
-          className="object-cover w-full h-full opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+          className="object-cover w-full h-full opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-0 group-hover:via-black/50 transition-colors duration-500"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-500 z-0"></div>
         {data.ep && (
           <div className="absolute top-2 left-2 bg-rose-600 px-2 py-1 text-xs font-bold rounded shadow-lg z-10">
             {data.ep}
@@ -397,9 +422,9 @@ function AnimeCard({ data, onClick }: { data: any, onClick: () => void }) {
             {data.type}
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="bg-rose-600/90 p-4 rounded-full shadow-2xl backdrop-blur transform scale-75 group-hover:scale-100 transition-all duration-300 bounce-animation">
-            <Play className="w-8 h-8 text-white ml-1" />
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
+          <div className="bg-rose-600 p-4 rounded-full shadow-2xl transform scale-50 group-hover:scale-100 transition-all duration-300 ease-out">
+            <Play className="w-8 h-8 text-white ml-1 fill-white" />
           </div>
         </div>
       </div>

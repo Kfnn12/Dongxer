@@ -41,11 +41,12 @@ app.get('/api/latest', async (req, res) => {
 app.get('/api/search', async (req, res) => {
   try {
     const query = req.query.q;
+    const page = req.query.page || 1;
     if (!query) {
       res.status(400).json({ success: false, message: 'Missing query parameter q' });
       return;
     }
-    const response = await axios.get(`https://animekhor.org/?s=${encodeURIComponent(query as string)}`);
+    const response = await axios.get(`https://animekhor.org/page/${page}/?s=${encodeURIComponent(query as string)}`);
     const $ = cheerio.load(response.data);
     
     const items: any[] = [];
@@ -60,11 +61,18 @@ app.get('/api/search', async (req, res) => {
         items.push({ title, link, img, type });
       }
     });
+
+    const hasNextPage = $('.pagination .next').length > 0;
     
-    res.json({ success: true, results: items });
+    res.json({ success: true, results: items, hasNextPage });
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({ success: false, message: `Failed to search anime: ${error.message}` });
+      if (error.response?.status === 404) {
+        // 404 usually means no results or page out of bounds
+        res.json({ success: true, results: [], hasNextPage: false });
+      } else {
+        res.status(error.response?.status || 500).json({ success: false, message: `Failed to search anime: ${error.message}` });
+      }
     } else {
       res.status(500).json({ success: false, message: `An unexpected error occurred: ${error.message}` });
     }
