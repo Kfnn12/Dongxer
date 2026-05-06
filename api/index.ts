@@ -53,7 +53,9 @@ app.get('/api/latest', async (req, res) => {
       }
     });
     
-    res.json({ success: true, results: items });
+    const hasNextPage = $('.hpage a.r').length > 0 || $('.pagination .next').length > 0;
+    
+    res.json({ success: true, results: items, hasNextPage });
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;
@@ -73,13 +75,21 @@ app.get('/api/latest', async (req, res) => {
 // 2. Search
 app.get('/api/search', async (req, res) => {
   try {
-    const query = req.query.q;
+    const query = req.query.q as string;
     const page = req.query.page || 1;
-    if (!query) {
-      res.status(400).json({ success: false, message: 'Missing query parameter q' });
+    
+    const params: any = {};
+    if (query) params.s = query;
+    if (req.query.genre) params['genre[]'] = req.query.genre;
+    if (req.query.status) params.status = req.query.status;
+    if (req.query.type) params.type = req.query.type;
+    
+    if (Object.keys(params).length === 0) {
+      res.status(400).json({ success: false, message: 'Please provide at least one search parameter (query, genre, status, type)' });
       return;
     }
-    const html = await fetchHtml(`https://animekhor.org/page/${page}/`, { s: query });
+    
+    const html = await fetchHtml(`https://animekhor.org/anime/page/${page}/`, params);
     const $ = cheerio.load(html);
     
     const items: any[] = [];
@@ -95,7 +105,7 @@ app.get('/api/search', async (req, res) => {
       }
     });
 
-    const hasNextPage = $('.pagination .next').length > 0;
+    const hasNextPage = $('.hpage a.r').length > 0 || $('.pagination .next').length > 0;
     
     res.json({ success: true, results: items, hasNextPage });
   } catch (error: any) {
@@ -159,7 +169,18 @@ app.get('/api/info', async (req, res) => {
       requestedIndex = episodes.findIndex((e: any) => e.link === req.query.url);
     }
     
-    res.json({ success: true, info: { title, poster, description, genres, episodes, requestedIndex } });
+    const recommended: any[] = [];
+    $('.bixbox:contains("Recommended Series")').find('.bsx').each((i, el)=>{ 
+      recommended.push({ 
+        title: $(el).find('a').attr('title'), 
+        link: $(el).find('a').attr('href'), 
+        img: $(el).find('img').attr('src') || $(el).find('img').attr('data-src'),
+        ep: $(el).find('.epx').text().trim(),
+        type: $(el).find('.typez').text().trim()
+      }); 
+    });
+
+    res.json({ success: true, info: { title, poster, description, genres, episodes, requestedIndex, recommended } });
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;
