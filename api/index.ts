@@ -55,8 +55,15 @@ app.get('/api/latest', async (req, res) => {
     
     res.json({ success: true, results: items });
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({ success: false, message: `Failed to fetch latest anime: ${error.message}` });
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      let message = `Failed to fetch latest anime: ${error.message}`;
+      if (status >= 500) {
+         message = "Anime server is currently unavailable or under heavy load (5xx error). Please try again later.";
+      } else if (status === 403 || status === 401) {
+         message = "Access denied by the anime server. It might be protecting against bots.";
+      }
+      res.status(status).json({ success: false, message, status });
     } else {
       res.status(500).json({ success: false, message: `An unexpected error occurred: ${error.message}` });
     }
@@ -92,13 +99,17 @@ app.get('/api/search', async (req, res) => {
     
     res.json({ success: true, results: items, hasNextPage });
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        // 404 usually means no results or page out of bounds
-        res.json({ success: true, results: [], hasNextPage: false });
-      } else {
-        res.status(error.response?.status || 500).json({ success: false, message: `Failed to search anime: ${error.message}` });
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      let message = `Failed to search anime: ${error.message}`;
+      if (status === 404) {
+        return res.json({ success: true, results: [], hasNextPage: false });
+      } else if (status >= 500) {
+         message = "Anime server is currently unavailable or under heavy load (5xx error). Please try again later.";
+      } else if (status === 403 || status === 401) {
+         message = "Access denied by the anime server. It might be protecting against bots.";
       }
+      res.status(status).json({ success: false, message, status });
     } else {
       res.status(500).json({ success: false, message: `An unexpected error occurred: ${error.message}` });
     }
@@ -150,8 +161,15 @@ app.get('/api/info', async (req, res) => {
     
     res.json({ success: true, info: { title, poster, description, genres, episodes, requestedIndex } });
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({ success: false, message: `Failed to fetch anime details: ${error.message}` });
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      let message = `Failed to fetch anime details: ${error.message}`;
+      if (status >= 500) {
+         message = "Anime server is currently unavailable or under heavy load (5xx error). Please try again later.";
+      } else if (status === 403 || status === 401) {
+         message = "Access denied by the anime server. It might be protecting against bots.";
+      }
+      res.status(status).json({ success: false, message, status });
     } else {
       res.status(500).json({ success: false, message: `An unexpected error occurred: ${error.message}` });
     }
@@ -218,8 +236,15 @@ app.get('/api/watch', async (req, res) => {
     
     res.json({ success: true, stream: { iframe: iframeUrl }, servers });
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      res.status(error.response?.status || 500).json({ success: false, message: `Failed to fetch episode stream: ${error.message}` });
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      let message = `Failed to fetch episode stream: ${error.message}`;
+      if (status >= 500) {
+         message = "Anime server is currently unavailable or under heavy load (5xx error). Please try again later.";
+      } else if (status === 403 || status === 401) {
+         message = "Access denied by the anime server. It might be protecting against bots.";
+      }
+      res.status(status).json({ success: false, message, status });
     } else {
       res.status(500).json({ success: false, message: `An unexpected error occurred: ${error.message}` });
     }

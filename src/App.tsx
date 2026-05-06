@@ -54,7 +54,8 @@ function App() {
       if (data.success) {
         setLatestReleases(data.results.slice(0, 10)); // Top 10 from the fetched page
       } else {
-        setGlobalError(data.message || "Failed to load latest releases.");
+        const errorMsg = data.status ? `[Error ${data.status}] ${data.message}` : data.message || "Failed to load latest releases.";
+        setGlobalError(errorMsg);
       }
     } catch(e: any) {
       console.error(e);
@@ -83,7 +84,8 @@ function App() {
         }
       } else {
         setResults([]);
-        setGlobalError(data.message || "Failed to search anime.");
+        const errorMsg = data.status ? `[Error ${data.status}] ${data.message}` : data.message || "Failed to search anime.";
+        setGlobalError(errorMsg);
       }
     } catch(err: any) {
       console.error(err);
@@ -120,7 +122,8 @@ function App() {
           }, 0);
         }
       } else {
-        setGlobalError(data.message || "Failed to load anime details.");
+        const errorMsg = data.status ? `[Error ${data.status}] ${data.message}` : data.message || "Failed to load anime details.";
+        setGlobalError(errorMsg);
       }
     } catch(err: any) {
       console.error(err);
@@ -139,7 +142,8 @@ function App() {
       const res = await fetch(`/api/watch?url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
-         setPlayerError(data?.message || "Failed to fetch stream configuration.");
+         const errorMsg = data?.status ? `[Error ${data.status}] ${data.message}` : data?.message || "Failed to fetch stream configuration.";
+         setPlayerError(errorMsg);
          setLoading(false);
          return;
       }
