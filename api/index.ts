@@ -7,16 +7,38 @@ const app = express();
 
 app.use(cors());
 
+async function fetchHtml(url: string, params?: any): Promise<string> {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+  };
+
+  try {
+    const response = await axios.get(url, { params, headers });
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && (error.response?.status === 503 || error.response?.status === 403 || error.response?.status === 502 || error.response?.status === 522)) {
+      let finalUrl = url;
+      if (params) {
+        const urlObj = new URL(url);
+        Object.keys(params).forEach(key => urlObj.searchParams.append(key, params[key]));
+        finalUrl = urlObj.toString();
+      }
+      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${finalUrl}`;
+      const proxyResponse = await axios.get(proxyUrl);
+      return proxyResponse.data;
+    }
+    throw error;
+  }
+}
+
 // 1. Get Latest Releases
 app.get('/api/latest', async (req, res) => {
   try {
     const page = req.query.page || 1;
-    const response = await axios.get(`https://animekhor.org/page/${page}/`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    const $ = cheerio.load(response.data);
+    const html = await fetchHtml(`https://animekhor.org/page/${page}/`);
+    const $ = cheerio.load(html);
     
     const items: any[] = [];
     $('.bsx').each((i, el) => {
@@ -50,13 +72,8 @@ app.get('/api/search', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing query parameter q' });
       return;
     }
-    const response = await axios.get(`https://animekhor.org/page/${page}/`, {
-      params: { s: query },
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    const $ = cheerio.load(response.data);
+    const html = await fetchHtml(`https://animekhor.org/page/${page}/`, { s: query });
+    const $ = cheerio.load(html);
     
     const items: any[] = [];
     $('.bsx').each((i, el) => {
@@ -96,23 +113,15 @@ app.get('/api/info', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing url parameter' });
       return;
     }
-    let response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    let $ = cheerio.load(response.data);
+    let html = await fetchHtml(url);
+    let $ = cheerio.load(html);
     
     // If it's an episode page, find the anime link from breadcrumbs and fetch that instead
     const breadcrumbs = $('.ts-breadcrumb a').map((i, el) => $(el).attr('href')).get();
     if (breadcrumbs.length >= 2 && breadcrumbs[1] && breadcrumbs[1].includes('/anime/')) {
        url = breadcrumbs[1];
-       response = await axios.get(url, {
-         headers: {
-           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-         }
-       });
-       $ = cheerio.load(response.data);
+       html = await fetchHtml(url);
+       $ = cheerio.load(html);
     }
     
     const title = $('.entry-title').text() || $('h1[itemprop="name"]').text();
@@ -157,12 +166,8 @@ app.get('/api/watch', async (req, res) => {
       res.status(400).json({ success: false, message: 'Missing url parameter' });
       return;
     }
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    const $ = cheerio.load(response.data);
+    const html = await fetchHtml(url);
+    const $ = cheerio.load(html);
     
     let servers: { name: string, iframe: string }[] = [];
     
