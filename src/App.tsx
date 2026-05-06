@@ -401,7 +401,7 @@ function App() {
   );
 }
 
-function AnimeCard({ data, onClick }: { data: any, onClick: () => void | Promise<void> }) {
+const AnimeCard: React.FC<{ data: any, onClick: () => void | Promise<void> }> = ({ data, onClick }) => {
   return (
     <div 
       onClick={onClick}

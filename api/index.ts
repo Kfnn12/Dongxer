@@ -25,7 +25,7 @@ async function fetchHtml(url: string, params?: any): Promise<string> {
         Object.keys(params).forEach(key => urlObj.searchParams.append(key, params[key]));
         finalUrl = urlObj.toString();
       }
-      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${finalUrl}`;
+      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(finalUrl)}`;
       const proxyResponse = await axios.get(proxyUrl);
       return proxyResponse.data;
     }
